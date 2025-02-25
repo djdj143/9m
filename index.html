@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+        }
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .card {
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .task-card {
+            transition: all 0.3s ease;
+        }
+        .task-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img id="company-logo" src="https://9mindia.in/media/Images/9M_logo_tklb61I.png" alt="Company Logo" class="h-10 w-10 rounded-full mr-3">
+                <h1 class="text-xl font-bold hidden md:block">Employee Dashboard</h1>
+                <h1 class="text-xl font-bold block md:hidden">Dashboard</h1>
+            </div>
+            <div class="flex items-center">
+                <div id="employee-mini-profile" class="flex items-center cursor-pointer">
+                    <img id="user-avatar" src="/api/placeholder/32/32" alt="Profile" class="h-8 w-8 rounded-full mr-2">
+                    <span id="user-name" class="font-medium hidden md:block">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Employee Profile Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex flex-col md:flex-row items-center">
+                <img id="profile-photo" src="/api/placeholder/100/100" alt="Employee Photo" class="h-24 w-24 rounded-full border-4 border-blue-500 mb-4 md:mb-0 md:mr-6">
+                <div class="text-center md:text-left">
+                    <h2 id="employee-name" class="text-2xl font-bold text-gray-800">Loading...</h2>
+                    <p id="employee-position" class="text-lg text-gray-600">Loading...</p>
+                    <div class="mt-2 flex flex-col md:flex-row md:items-center">
+                        <span id="employee-id" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-0 md:mr-2 mb-2 md:mb-0">ID: Loading...</span>
+                        <span id="employee-department" class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm mr-0 md:mr-2 mb-2 md:mb-0">Loading...</span>
+                        <span id="employee-status" class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Status: Loading...</span>
+                    </div>
+                </div>
+                <div class="mt-4 md:mt-0 md:ml-auto text-center md:text-right">
+                    <p class="text-gray-600"><i class="fas fa-phone mr-2"></i><span id="employee-phone">Loading...</span></p>
+                    <p class="text-gray-600"><i class="fas fa-envelope mr-2"></i><span id="employee-email">Loading...</span></p>
+                    <p class="text-gray-600"><i class="fas fa-calendar mr-2"></i>Hired: <span id="employee-hire-date">Loading...</span></p>
+                    <p class="text-gray-600"><i class="fas fa-user-tie mr-2"></i>Manager: <span id="employee-manager">Loading...</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow-md p-4 card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-800">
+                        <i class="fas fa-calendar-check text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">Attendance Rate</p>
+                        <p id="attendance-rate" class="text-xl font-bold">0%</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="attendance-progress" class="bg-blue-600 rounded-full h-2" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-4 card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-800">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">On-Time Rate</p>
+                        <p id="ontime-rate" class="text-xl font-bold">0%</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="ontime-progress" class="bg-green-600 rounded-full h-2" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-4 card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-tasks text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">Pending Tasks</p>
+                        <p id="tasks-count" class="text-xl font-bold">0</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="tasks-progress" class="bg-yellow-600 rounded-full h-2" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-4 card">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-800">
+                        <i class="fas fa-user-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">Work Hours</p>
+                        <p id="work-hours" class="text-xl font-bold">0 hrs</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="hours-progress" class="bg-purple-600 rounded-full h-2" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="mb-6 border-b border-gray-200">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500">
+                <li class="mr-2">
+                    <a href="#" class="tab-link inline-flex items-center justify-center p-4 border-b-2 border-blue-600 text-blue-600 rounded-t-lg active" data-target="tasks">
+                        <i class="fas fa-tasks mr-2"></i>My Tasks
+                    </a>
+                </li>
+                <li class="mr-2">
+                    <a href="#" class="tab-link inline-flex items-center justify-center p-4 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-600 rounded-t-lg" data-target="delegated">
+                        <i class="fas fa-share-alt mr-2"></i>Delegated Tasks
+                    </a>
+                </li>
+                <li class="mr-2">
+                    <a href="#" class="tab-link inline-flex items-center justify-center p-4 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-600 rounded-t-lg" data-target="helpticket">
+                        <i class="fas fa-share-alt mr-2"></i>Help Ticket
+                    </a>
+                </li>
+                <li class="mr-2">
+                    <a href="#" class="tab-link inline-flex items-center justify-center p-4 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-600 rounded-t-lg" data-target="auditpoint">
+                        <i class="fas fa-share-alt mr-2"></i>Audit Point
+                    </a>
+                </li>
+                <li class="mr-2">
+                    <a href="#" class="tab-link inline-flex items-center justify-center p-4 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-600 rounded-t-lg" data-target="attendance">
+                        <i class="fas fa-calendar-alt mr-2"></i>Attendance
+                    </a>
+                </li>
+                <li class="mr-2">
+                    <a href="#" class="tab-link inline-flex items-center justify-center p-4 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-600 rounded-t-lg" data-target="leave">
+                        <i class="fas fa-calendar-alt mr-2"></i>Leave Form
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- My Tasks Tab -->
+            <div id="tasks-tab" class="tab-pane active">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">My Tasks</h3>
+                    <div class="flex">
+                        <select id="task-filter" class="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Types</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="animate-pulse bg-white rounded-lg shadow p-4">
+                        <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div class="h-10 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-1/3 mt-4"></div>
+                    </div>
+                    <div class="animate-pulse bg-white rounded-lg shadow p-4">
+                        <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div class="h-10 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-1/3 mt-4"></div>
+                    </div>
+                </div>
+                
+                <div id="no-tasks" class="hidden bg-white rounded-lg shadow-md p-6 text-center">
+                    <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+                    <h3 class="text-xl font-medium mb-2">No pending tasks!</h3>
+                    <p class="text-gray-600">You're all caught up with your assigned tasks.</p>
+                </div>
+            </div>
+            
+            <!-- Delegated Tasks Tab -->
+            <div id="delegated-tab" class="tab-pane hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Delegated Tasks</h3>
+                </div>
+                
+                <div id="delegated-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="animate-pulse bg-white rounded-lg shadow p-4">
+                        <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div class="h-10 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-1/3 mt-4"></div>
+                    </div>
+                </div>
+                
+                <div id="no-delegated" class="hidden bg-white rounded-lg shadow-md p-6 text-center">
+                    <i class="fas fa-user-check text-blue-500 text-5xl mb-4"></i>
+                    <h3 class="text-xl font-medium mb-2">No delegated tasks!</h3>
+                    <p class="text-gray-600">You haven't delegated any pending tasks to your team members.</p>
+                </div>
+            </div>
+             
+            <!-- Help Ticket Tab -->
+            <div id="helpticket-tab" class="tab-pane hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Help Tickets</h3>
+                </div>
+                
+                <div id="helpticket-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="animate-pulse bg-white rounded-lg shadow p-4">
+                        <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div class="h-10 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-1/3 mt-4"></div>
+                    </div>
+                </div>
+                
+                <div id="no-helpticket" class="hidden bg-white rounded-lg shadow-md p-6 text-center">
+                    <i class="fas fa-user-check text-blue-500 text-5xl mb-4"></i>
+                    <h3 class="text-xl font-medium mb-2">No Help Ticket raised!</h3>
+                    <p class="text-gray-600">You haven't Help Ticker any pending tasks to your team members.</p>
+                </div>
+            </div>
+            
+             
+            <!-- Audit Point Tab -->
+            <div id="auditpoint-tab" class="tab-pane hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Audit Points</h3>
+                </div>
+                
+                <div id="auditpoint-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="animate-pulse bg-white rounded-lg shadow p-4">
+                        <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div class="h-10 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-1/3 mt-4"></div>
+                    </div>
+                </div>
+                
+                <div id="no-auditpoint" class="hidden bg-white rounded-lg shadow-md p-6 text-center">
+                    <i class="fas fa-user-check text-blue-500 text-5xl mb-4"></i>
+                    <h3 class="text-xl font-medium mb-2">No Audit Point Raised!</h3>
+                    <p class="text-gray-600">You haven't Audit Point any pending tasks to your team members.</p>
+                </div>
+            </div>
+            
+
+            <!-- Attendance Tab -->
+            <div id="attendance-tab" class="tab-pane hidden">
+                <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                    <div class="p-4 bg-blue-50 border-b border-blue-100">
+                        <h3 class="text-xl font-bold text-gray-800">Attendance Summary</h3>
+                        <p class="text-sm text-gray-600">Last 40 days</p>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Present Days</p>
+                                <p id="present-days" class="text-xl font-bold text-green-600">0</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Absent Days</p>
+                                <p id="absent-days" class="text-xl font-bold text-red-600">0</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Late Days</p>
+                                <p id="late-days" class="text-xl font-bold text-yellow-600">0</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Half Days</p>
+                                <p id="half-days" class="text-xl font-bold text-orange-600">0</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Average Check-in Time</p>
+                                <p id="avg-checkin" class="text-lg font-medium">--:--</p>
+                                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                    <div id="checkin-progress" class="bg-blue-600 rounded-full h-2" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Average Check-out Time</p>
+                                <p id="avg-checkout" class="text-lg font-medium">--:--</p>
+                                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                    <div id="checkout-progress" class="bg-green-600 rounded-full h-2" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Recent Attendance</h3>
+                            <p class="text-sm text-gray-600">Last 40 days</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Hours</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Loading attendance data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+      <!-- Leave Form Tab -->
+      <div id="leave-tab" class="tab-pane hidden">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800">Leave Form</h3>
+        </div>
+        
+        <div id="leave-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="animate-pulse bg-white rounded-lg shadow p-4">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div class="h-10 bg-gray-200 rounded mb-2"></div>
+                <div class="h-8 bg-gray-200 rounded w-1/3 mt-4"></div>
+            </div>
+        </div>
+        
+        <div id="no-leave" class="hidden bg-white rounded-lg shadow-md p-6 text-center">
+            <i class="fas fa-user-check text-blue-500 text-5xl mb-4"></i>
+            <h3 class="text-xl font-medium mb-2">No !</h3>
+            <p class="text-gray-600">You haven't.</p>
+        </div>
+    </div>
+    
+
+    <!-- Task Completion Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+            <div class="p-4 border-b border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800">Complete Task</h3>
+            </div>
+            <div class="p-4">
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">Task ID:</p>
+                    <p id="modal-task-id" class="font-medium">-</p>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">Description:</p>
+                    <p id="modal-description" class="font-medium">-</p>
+                </div>
+                <div class="mb-4">
+                    <label for="modal-remark" class="block text-sm font-medium text-gray-700 mb-1">Enter Remark</label>
+                    <textarea id="modal-remark" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Enter your remarks about this task"></textarea>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button id="close-modal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                <button id="complete-task" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Complete Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript to handle the dashboard functionality -->
+    <script>
+      let myGlobalArray_Task = []; // Global array  
+      let myGlobalArray_Delegation = []; // Global array  
+      const API_KEY = "AIzaSyAi16ZipIlVJNZZoV4Z2pPwJqrbXhZwkpg"; 
+const SPREADSHEET_ID = "1-q1jiNV5jIHZnLTxY-pdQa4tLigyz6Qgn70D0gbrbyA"; // Replace with your actual sheet ID
+
+// Function to fetch data from a specific sheet
+async function fetchSheetData(sheetName) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?key=${API_KEY}`;
+    
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return formatSheetData(data.values); // Convert data into object format
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    }
+}
+
+// Convert sheet rows into key-value objects
+function formatSheetData(rows) {
+    if (!rows || rows.length < 2) return [];
+    
+    const headers = rows[0]; // First row is column names
+    return rows.slice(1).map(row => {
+        let obj = {};
+        headers.forEach((key, i) => {
+            obj[key] = row[i] || ""; // Assign row values to keys
+        });
+        return obj;
+    });
+}
+
+
+
+        // Helper functions
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+        
+        function getDaysRemaining(dueDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const due = new Date(dueDate);
+            due.setHours(0, 0, 0, 0);
+            
+            const diffTime = due - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays;
+        }
+        
+        function getStatusClass(status) {
+            switch(status) {
+                case 'Present': return 'bg-green-100 text-green-800';
+                case 'Absent': return 'bg-red-100 text-red-800';
+                case 'Late': return 'bg-yellow-100 text-yellow-800';
+                case 'Half-Day': return 'bg-orange-100 text-orange-800';
+                case 'Weekend': return 'bg-gray-100 text-gray-600';
+                case 'Holiday': return 'bg-blue-100 text-blue-800';
+                default: return 'bg-gray-100 text-gray-600';
+            }
+        }
+        
+        function getTaskTypeClass(type) {
+            switch(type) {
+                case 'Daily': return 'bg-blue-100 text-blue-800';
+                case 'Weekly': return 'bg-purple-100 text-purple-800';
+                case 'Monthly': return 'bg-indigo-100 text-indigo-800';
+                default: return 'bg-gray-100 text-gray-600';
+            }
+        }
+        
+        function getDueDateClass(dueDate) {
+            const daysRemaining = getDaysRemaining(dueDate);
+            
+            if (daysRemaining < 0) return 'bg-red-100 text-red-800';
+            if (daysRemaining <= 1) return 'bg-red-50 text-red-600';
+            if (daysRemaining <= 3) return 'bg-yellow-50 text-yellow-600';
+            return 'bg-green-50 text-green-600';
+        }
+        
+        function getDueDateText(dueDate) {
+            const daysRemaining = getDaysRemaining(dueDate);
+            
+            if (daysRemaining < 0) return `Overdue by ${Math.abs(daysRemaining)} day(s)`;
+            if (daysRemaining === 0) return 'Due today';
+            if (daysRemaining === 1) return 'Due tomorrow';
+            return `Due in ${daysRemaining} days`;
+        }
+        
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // In a real application, you would fetch the data from Google Sheets API
+            // For this demo, we'll use the demo data directly
+            
+            // Show loading overlay
+            document.getElementById('loading').classList.remove('hidden');
+            
+            // Simulate API fetch time
+            // setTimeout(() => {
+            //     loadEmployeeData(demoEmployee);
+            //     loadTasksData(demoTasks);
+            //     loadDelegatedTasksData(demoDelegatedTasks);
+            //     loadAttendanceSummary(demoAttendanceSummary);
+            //     loadAttendanceData(demoAttendance);
+                
+            //     // Hide loading overlay
+            //     document.getElementById('loading').classList.add('hidden');
+            // }, 1500);
+            
+            // Set up tab navigation
+            const tabLinks = document.querySelectorAll('.tab-link');
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all tabs and links
+                    document.querySelectorAll('.tab-pane').forEach(tab => {
+                        tab.classList.add('hidden');
+                        tab.classList.remove('active');
+                    });
+                    
+                    tabLinks.forEach(link => {
+                        link.classList.remove('active');
+                        link.classList.remove('border-blue-600');
+                        link.classList.remove('text-blue-600');
+                        link.classList.add('border-transparent');
+                        link.classList.add('hover:border-gray-300');
+                        link.classList.add('hover:text-gray-600');
+                    });
+                    
+                    // Add active class to clicked tab and link
+                    const target = this.getAttribute('data-target');
+                    document.getElementById(`${target}-tab`).classList.remove('hidden');
+                    document.getElementById(`${target}-tab`).classList.add('active');
+                    
+                    this.classList.add('active');
+                    this.classList.add('border-blue-600');
+                    this.classList.add('text-blue-600');
+                    this.classList.remove('border-transparent');
+                    this.classList.remove('hover:border-gray-300');
+                    this.classList.remove('hover:text-gray-600');
+                });
+            });
+            
+            // Set up task filter
+            document.getElementById('task-filter').addEventListener('change', function() {
+                const filterValue = this.value;
+                filterTasks(filterValue);
+            });
+            
+            // Set up modal events
+            document.getElementById('close-modal').addEventListener('click', function() {
+                document.getElementById('task-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('complete-task').addEventListener('click', function() {
+                const taskId = document.getElementById('modal-task-id').textContent;
+                const remark = document.getElementById('modal-remark').value;
+                
+                if (remark.trim() === '') {
+                    alert('Please enter a remark before completing the task.');
+                    return;
+                }
+                
+                // In a real application, you would submit to the Google Form URL
+                // For this demo, we'll just simulate success
+                
+                // Show loading overlay
+                document.getElementById('loading').classList.remove('hidden');
+                
+                setTimeout(() => {
+                    // Remove the task from the list
+                    const updatedTasks = demoTasks.filter(task => task.TaskID !== taskId);
+                    loadTasksData(updatedTasks);
+                    
+                    // Hide loading overlay and modal
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('task-modal').classList.add('hidden');
+                    
+                    // Show success message
+                    alert(`Task ${taskId} completed successfully!`);
+                }, 1000);
+            });
+        });
+        
+        // Load employee data
+        function loadEmployeeData(employee) {
+            // Update profile card
+            document.getElementById('profile-photo').src = employee.PhotoURL || '/api/placeholder/100/100';
+            document.getElementById('employee-name').textContent = `${employee.FirstName} ${employee.LastName}`;
+            document.getElementById('employee-position').textContent = employee.Position;
+            document.getElementById('employee-id').textContent = `ID: ${employee.EmployeeID}`;
+            document.getElementById('employee-department').textContent = employee.Department;
+            document.getElementById('employee-status').textContent = `Status: ${employee.Status}`;
+            document.getElementById('employee-phone').textContent = employee.Phone;
+            document.getElementById('employee-email').textContent = employee.Email;
+            document.getElementById('employee-hire-date').textContent = formatDate(employee.HireDate);
+            document.getElementById('employee-manager').textContent = employee.Manager;
+            
+            // Update nav bar
+            document.getElementById('user-avatar').src = employee.PhotoURL || '/api/placeholder/32/32';
+            document.getElementById('user-name').textContent = `${employee.FirstName} ${employee.LastName}`;
+        }
+        
+        // Load tasks data
+        function loadTasksData(tasks) {
+            
+            const container = document.getElementById('tasks-container');
+            const noTasks = document.getElementById('no-tasks');
+            
+            // Update tasks count
+            document.getElementById('tasks-count').textContent = tasks.length;
+            document.getElementById('tasks-progress').style.width = `${Math.min(100, tasks.length * 10)}%`;
+            
+            if (tasks.length === 0) {
+                container.innerHTML = '';
+                noTasks.classList.remove('hidden');
+                return;
+            }
+            
+            noTasks.classList.add('hidden');
+            container.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const daysRemaining = getDaysRemaining(task.DueDate);
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-md p-4 task-card';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="px-2 py-1 text-xs rounded ${getTaskTypeClass(task.Type)}">${task.Type}</span>
+                        <span class="px-2 py-1 text-xs rounded ${getDueDateClass(task.DueDate)}">${getDueDateText(task.DueDate)}</span>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-2">Task ID: ${task.TaskID}</h4>
+                    <p class="text-gray-700 mb-4">${task.Description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Due: ${formatDate(task.DueDate)}</span>
+                        <button data-task-id="${task.TaskID}" data-description="${task.Description.replace(/"/g, '&quot;')}" data-form-url="${task.FormURL}" class="complete-task-btn px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm">Complete</button>
+                    </div>
+                `;
+                container.appendChild(card);
+                
+                // Add event listener to complete button
+                card.querySelector('.complete-task-btn').addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    const description = this.getAttribute('data-description');
+                    const formUrl = this.getAttribute('data-form-url');
+                    
+                    document.getElementById('modal-task-id').textContent = taskId;
+                    document.getElementById('modal-description').textContent = description;
+                    document.getElementById('modal-remark').value = '';
+                    document.getElementById('task-modal').classList.remove('hidden');
+                });
+            });
+        }
+        
+        // Filter tasks
+        function filterTasks(filterValue) {
+            console.log(filterValue)
+            if (filterValue === 'all') {
+                loadTasksData(myGlobalArray_Task);
+            } else {
+                const filteredTasks = myGlobalArray_Task.filter(task => task.Type === filterValue);
+                loadTasksData(filteredTasks);
+            }
+        }
+        
+        // Load delegated tasks data
+        function loadDelegatedTasksData(tasks) {
+            myGlobalArray_Delegation=tasks;
+            const container = document.getElementById('delegated-container');
+            const noDelegated = document.getElementById('no-delegated');
+            
+            if (tasks.length === 0) {
+                container.innerHTML = '';
+                noDelegated.classList.remove('hidden');
+                return;
+            }
+            
+            noDelegated.classList.add('hidden');
+            container.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const daysRemaining = getDaysRemaining(task.DueDate);
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-md p-4 task-card';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="px-2 py-1 text-xs rounded bg-purple-100 text-purple-800">Delegated</span>
+                        <span class="px-2 py-1 text-xs rounded ${getDueDateClass(task.DueDate)}">${getDueDateText(task.DueDate)}</span>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-2">Task ID: ${task.TaskID}</h4>
+                    <p class="text-gray-700 mb-3">${task.Description}</p>
+                    <p class="text-sm text-gray-600 mb-4">Assigned to: ${task.EmployeeEmail}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Due: ${formatDate(task.DueDate)}</span>
+                        <a href="${task.FormURL}" target="_blank" class="px-3 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition text-sm">View Form</a>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        // Load attendance summary
+        function loadAttendanceSummary(summary) {
+            // Update stats cards
+            const attendanceRate = (summary.PresentDays / summary.TotalWorkingDays * 100).toFixed(0);
+            document.getElementById('attendance-rate').textContent = `${attendanceRate}%`;
+            document.getElementById('attendance-progress').style.width = `${attendanceRate}%`;
+            
+            document.getElementById('ontime-rate').textContent = `${summary.OnTimePercentage}%`;
+            document.getElementById('ontime-progress').style.width = `${summary.OnTimePercentage}%`;
+            
+            const hoursPercentage = (summary.TotalWorkHours / summary.ExpectedWorkHours * 100).toFixed(0);
+            document.getElementById('work-hours').textContent = `${summary.TotalWorkHours} hrs`;
+            document.getElementById('hours-progress').style.width = `${hoursPercentage}%`;
+            
+            // Update attendance summary
+            document.getElementById('present-days').textContent = summary.PresentDays;
+            document.getElementById('absent-days').textContent = summary.AbsentDays;
+            document.getElementById('late-days').textContent = summary.LateDays;
+            document.getElementById('half-days').textContent = summary.HalfDays;
+            
+            document.getElementById('avg-checkin').textContent = summary.AverageCheckInTime;
+            document.getElementById('avg-checkout').textContent = summary.AverageCheckOutTime;
+            
+            // Calculate progress for check-in and check-out times
+            const expectedCheckIn = 9 * 60; // 9:00 AM in minutes
+            const expectedCheckOut = 18 * 60; // 6:00 PM in minutes
+            
+            const avgCheckInParts = summary.AverageCheckInTime.split(':');
+            const avgCheckInMinutes = parseInt(avgCheckInParts[0]) * 60 + parseInt(avgCheckInParts[1]);
+            
+            const avgCheckOutParts = summary.AverageCheckOutTime.split(':');
+            const avgCheckOutMinutes = parseInt(avgCheckOutParts[0]) * 60 + parseInt(avgCheckOutParts[1]);
+            
+            // Check-in progress (closer to expected is better)
+            const checkInDiff = Math.abs(avgCheckInMinutes - expectedCheckIn);
+            const checkInProgress = Math.max(0, 100 - (checkInDiff / 30) * 100); // 30 min late = 0%
+            document.getElementById('checkin-progress').style.width = `${checkInProgress}%`;
+            
+            // Check-out progress (later than expected is better)
+            const checkOutDiff = avgCheckOutMinutes - expectedCheckOut;
+            const checkOutProgress = Math.min(100, Math.max(0, 50 + (checkOutDiff / 60) * 50)); // 1 hour overtime = 100%
+            document.getElementById('checkout-progress').style.width = `${checkOutProgress}%`;
+        }
+        
+        // Load attendance data
+        function loadAttendanceData(attendance) {
+            const tableBody = document.getElementById('attendance-table-body');
+            tableBody.innerHTML = '';
+            
+            if (attendance.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No attendance data available</td>
+                `;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            attendance.forEach(record => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                if (!record.IsWorkingDay) {
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${formatDate(record.Date)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 py-1 text-xs rounded ${getStatusClass(record.Status)}">${record.Status}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.HolidayName}</td>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${formatDate(record.Date)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 py-1 text-xs rounded ${getStatusClass(record.Status)}">${record.Status}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.CheckInTime || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.CheckOutTime || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parseFloat(record.TotalHours) || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.Notes || '-'}</td>
+                    `;
+                }
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // In a production app, you would need these functions to interact with the Google Sheets API
+        // For demo purposes, they're placeholders
+        
+        // Function to fetch employee data from Google Sheets
+        async function fetchEmployeeData(email) {
+            // Real implementation would query the Employees sheet with the email
+            // Return the demo data for now
+            const employees = await fetchSheetData("Employees");
+
+            loadEmployeeData(employees.find(emp => emp.Email === email));
+
+        }
+        
+        // Function to fetch tasks data from Google Sheets
+        async function fetchTasksData(email) {
+            const tasks = await fetchSheetData("Tasks");
+             var datalist=tasks.filter(task => task.Email === email);
+            myGlobalArray_Task=tasks;
+            loadTasksData(datalist);
+        }
+        
+        // Function to fetch delegated tasks data from Google Sheets
+        async function fetchDelegatedTasksData(EmployeeEmail) {
+            const tasks = await fetchSheetData("DelegatedTasks");
+            loadDelegatedTasksData(tasks.filter(task => task.EmployeeEmail === EmployeeEmail));
+        }
+        
+        // Function to fetch attendance summary from Google Sheets
+        async function fetchAttendanceSummary(email) {
+            const summaries = await fetchSheetData("AttendanceSummary");
+          loadAttendanceSummary(summaries.find(summary => summary.Email === email));
+        }
+        
+// Function to fetch attendance data from Google Sheets
+async function fetchAttendanceData(email) {
+    const attendances = await fetchSheetData("Attendance");
+    
+    if (!attendances || attendances.length === 0) {
+        console.error("No attendance data found.");
+        return;
+    }
+    
+    console.log(attendances);
+    
+    // Filter all records that match the given email
+    const userAttendance = attendances.filter(attendance => attendance.Email === email);
+
+    loadAttendanceData(userAttendance); // Pass the filtered array
+}
+
+        
+        // Function to submit task completion to Google Form
+        async function submitTaskCompletion(taskId, email, name, remark) {
+            // In a real implementation, you would append the remark to the form URL
+            // and submit it programmatically or open it in a new window
+            // For demo purposes, we're just returning true
+            return true;
+        }
+
+        // Example Usage:
+(async () => {
+    const userEmail = "doman.developer@gmail.com";
+    
+    const employeeData = await fetchEmployeeData(userEmail);
+    console.log("Employee Info:", employeeData);
+
+    const tasks = await fetchTasksData(userEmail);
+    console.log("Tasks Assigned:", tasks);
+
+    const delegatedTasks = await fetchDelegatedTasksData(userEmail);
+    console.log("Delegated Tasks:", delegatedTasks);
+
+    const attendanceSummary = await fetchAttendanceSummary(userEmail);
+    console.log("Attendance Summary:", attendanceSummary);
+    const fetchAttendanceD = await fetchAttendanceData(userEmail);
+    console.log("Attendance:", fetchAttendanceD);
+    document.getElementById('loading').classList.add('hidden');
+})();
+    </script>
+</body>
+</html>
